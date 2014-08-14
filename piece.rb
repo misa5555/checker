@@ -1,3 +1,5 @@
+require './errors'
+
 class Piece
   attr_accessor :pos
   attr_reader :color
@@ -10,17 +12,19 @@ class Piece
   end
   
   # pos is absolute coordinate
+  # to_pos is array [a, b]
   def perform_slide(to_pos)
-    return false unless check_move(to_pos) 
+    return false unless check_move(to_pos, 1) 
     
     current_pos = @pos
     @pos = to_pos
     @board[current_pos] = nil
     @board[@pos] = self
+    return true
   end
 
   def perform_jump(to_pos)
-    return false unless check_move(to_pos) 
+    return false unless check_move(to_pos, 2) 
     
     #check if piece in to_pos is different color
     jumped_pos = between_pos(@pos, to_pos)
@@ -33,13 +37,49 @@ class Piece
     @board[current_pos] = nil
     @pos = to_pos
     @board[@pos] = self
+    return true
   end
 
   # move sequence [[a,b], [c,d]...]
   def perform_moves!(move_sequence)
     if move_sequence.length == 1
-      raise InvalidMoveError.new("can not slide here") perform_slide(move_sequence[0])
+      unless perform_slide(move_sequence[0]) 
+        unless perform_jump(move_sequence[0]) 
+          raise InvalidMoveError.new("wrong move")
+        end
+      end
+    else
+      move_sequence.each do |move|
+        unless perform_jump(move)
+          raise InvalidMoveError.new("jump interrupted")
+          break
+        end
+      end
     end
+    return 
+  end
+  
+  def perform_moves(move_sequence)
+    unless valid_move_seq?(move_sequence)
+      begin perform_moves!(move_sequence)
+      rescue InvalidMoveError => e
+        puts e.message
+      end
+    else
+      perform_moves!(move_sequence)
+    end
+    print "success!"
+  end
+
+  def valid_move_seq?(seq)
+    dup_board = @board.dup
+    dup_piece = dup_board[@pos] 
+    begin dup_piece.perform_moves!(seq)
+    rescue InvalidMoveError => e
+      puts e.message
+      return false
+    end  
+    return true
   end
 
   def maybe_promote
@@ -50,7 +90,12 @@ class Piece
     return "B" if @color == :black
     return "W" if @color == :white
   end
-private
+
+  def dup(board)
+    Piece.new(@pos, @color, board)
+  end
+
+  private
   def move_diffs
     black_move = [[1, 1], [1, -1]]
     white_move = [[-1,1], [-1, -1]]
@@ -75,20 +120,20 @@ private
   end
   
   def in_boudary?(pos)
+    p pos
     pos.all?{|coord| coord.between?(0, 7)}  
   end
   
-  def check_move(to_pos)
+  def check_move(to_pos, n)
     # check if new position is in boudary
     return false unless in_boudary?(to_pos)
     
     # check if this is valid move
     diff = [to_pos[0]-@pos[0], to_pos[1] - @pos[1]]
-    return false unless multipled_vectors(move_diffs, 2).include?(diff)
+    return false unless multipled_vectors(move_diffs, n).include?(diff)
     # check if there is NO piece in new position
     return false unless @board[to_pos].nil?
     return true
-  end 
-  
+  end
 
 end

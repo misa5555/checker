@@ -3,11 +3,11 @@ class Board
   LENGTH = 8
   attr_accessor :grids
   
-  def self.generate_test_board
+  def generate_test_board
     board = Board.new(true) 
-    p board
-    test_positions_white = [[2, 4], [4,2], [5, 5]]
-    test_positions_black = [[3,3], [4,6], [6,4]]
+    test_positions_white = [[4,3], [6,1]] 
+    test_positions_black = [[3,4]]
+    
     test_positions_white.each do |pos|
       board[pos] = Piece.new(pos, :white, self)
     end
@@ -18,7 +18,12 @@ class Board
   end
   
   def initialize(test_option = false)
-    generate_board
+    @grids = Array.new(LENGTH){Array.new(LENGTH, nil)}
+    unless test_option
+      generate_board
+    else
+      generate_test_board
+    end
   end
 
   def [](pos)
@@ -31,11 +36,19 @@ class Board
     @grids[row][col] = piece
   end
 
+  def won?
+    grids_tmp = @grids.flatten.compact
+    if grids_tmp.none?{|grid| grid.color == :white} || grids_tmp.none?{|grid|grid.color == :black} 
+      return true
+    end
+    return false
+  end  
+  
   def render_board
     @grids.map do |row|
       row.map do |grid|
         render_grid(grid)  
-      end.join("")
+      end.join(" ")
     end.join("\n") +"\n"    
   end
   
@@ -43,11 +56,25 @@ class Board
     return " " if grid.nil? 
     return grid.render if grid.is_a?(Piece)
   end
-  
+
+  def dup
+    dup_board = Board.new 
+    @grids.each_with_index do |row, x|
+      row.each_with_index do |piece, y|
+        pos = [x, y]
+        unless self[pos].nil?
+          dup_board[pos] = piece.dup(dup_board) 
+        else
+          dup_board[pos] = nil
+        end
+      end
+    end
+    dup_board
+  end
+
   #private
   def generate_board
     # set nil in empty grid
-    @grids = Array.new(LENGTH){Array.new(LENGTH, nil)}
     
     piece_sets = [[:black, initial_black_positions], [:white, initial_white_positions]]
     piece_sets.each do |set|
@@ -78,4 +105,3 @@ class Board
     base + white_pos
   end
 end
-
