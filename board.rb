@@ -28,7 +28,7 @@ class Board
 
   def [](pos)
     row, col = pos
-    @grids[row][col]
+    piece = @grids[row][col]
   end
 
   def []=(pos, piece)
@@ -44,16 +44,27 @@ class Board
     return false
   end  
   
+  
   def render_board
-    @grids.map do |row|
-      row.map do |grid|
-        render_grid(grid)  
-      end.join(" ")
-    end.join("\n") +"\n"    
+#    " 0 1 2 3 4 5 6 7\n"+
+#    @grids.map do |row|
+#      " "+row.map do |grid|
+#        render_grid(grid)  
+#      end.join(" ") 
+#    end.join("\n") +"\n"    
+  
+    print "  0 1 2 3 4 5 6 7\n"
+    @grids.each_with_index do |row, i|
+      print i.to_s+" "
+      row.each do |grid|
+        print render_grid(grid) + " "
+      end
+      print "\n"
+    end
   end
   
   def render_grid(grid)
-    return " " if grid.nil? 
+    return "-" if grid.nil? 
     return grid.render if grid.is_a?(Piece)
   end
 

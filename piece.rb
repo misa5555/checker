@@ -60,15 +60,8 @@ class Piece
   end
   
   def perform_moves(move_sequence)
-    unless valid_move_seq?(move_sequence)
-      begin perform_moves!(move_sequence)
-      rescue InvalidMoveError => e
-        puts e.message
-      end
-    else
+      raise InvalidMoveError unless valid_move_seq?(move_sequence)
       perform_moves!(move_sequence)
-    end
-    print "success!"
   end
 
   def valid_move_seq?(seq)
@@ -76,14 +69,13 @@ class Piece
     dup_piece = dup_board[@pos] 
     begin dup_piece.perform_moves!(seq)
     rescue InvalidMoveError => e
-      puts e.message
       return false
     end  
     return true
   end
 
   def maybe_promote
-
+    
   end
   
   def render
@@ -120,7 +112,6 @@ class Piece
   end
   
   def in_boudary?(pos)
-    p pos
     pos.all?{|coord| coord.between?(0, 7)}  
   end
   
